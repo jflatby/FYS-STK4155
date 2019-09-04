@@ -34,7 +34,7 @@ class Project1:
             
     def ordinary_least_squares(self, z, design_matrix):
         n = self.number_of_points * self.number_of_points
-        z_1 = np.ravel(z) + np.random.random(n) * 1
+        z_1 = np.ravel(z)
 
         fit = np.linalg.lstsq(design_matrix, z_1, rcond=None)[0]
         z_tilde = np.dot(fit, design_matrix.T)
@@ -100,6 +100,9 @@ class Project1:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', dest='method', type=str, help='Regression method', default='ols')
+    parser.add_argument('-degree', dest='poly_degree', type=int, help='Polynomial degree for design matrix', default=5)
+    parser.add_argument('-noise', dest='noise_magnitude', type=float, help='Magnitude for the noise added to Frankes function', default=0.01)
+    parser.add_argument('-n', dest='N', type=int, help='Number of points in x- and y-directions', default=100)
     args = parser.parse_args()
     
-    project = Project1(method=args.method)
+    project = Project1(args.N, args.method, args.noise_magnitude, args.poly_degree)
