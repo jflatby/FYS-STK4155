@@ -4,41 +4,55 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import sklearn.metrics as metrics
+from sklearn.model_selection import train_test_split
 plt.style.use('ggplot')
 
 
-class Project1:
+class Regression:
     
     def __init__(self, N = 100, method = 'ols', noise_magnitude = 0.01, polynomial_degree = 5):
         self.number_of_points = N
         self.method = method
-        
-        ## Create uniform grid
-        x = np.sort(np.random.rand(N))
-        y = np.sort(np.random.rand(N))
 
-        self.x, self.y = np.meshgrid(x, y)
-        
-        ## Compute franke's function with noise
-        self.z = self.frankes_function(self.x, self.y, noise_magnitude)
+        self.x, self.y, self.z = self.init_data(noise_magnitude)
         
         ## create design_matrix
         self.design_matrix = self.create_design_matrix(self.x, self.y, polynomial_degree)
         
+        self.find_fit(method)
+            
+    def find_fit(self, method, split_data = False):
+        if split_data:
+            print(np.array(train_test_split(self.z)[1]).shape)
+            
+            
         if method == 'ols':
             self.z_tilde = self.ordinary_least_squares(self.z, self.design_matrix)
         else:
             print('invalid method.')
             return
+        
             
+    def init_data(self, noise):
+        ## Create uniform grid
+        x = np.sort(np.random.rand(self.number_of_points))
+        y = np.sort(np.random.rand(self.number_of_points))
+
+        x, y = np.meshgrid(x, y)
+        
+        ## Compute franke's function with noise
+        z = self.frankes_function(x, y, noise)
+        
+        return (x, y, z)
+        
+    
     def ordinary_least_squares(self, z, design_matrix):
-        n = self.number_of_points * self.number_of_points
         z_1 = np.ravel(z)
 
-        fit = np.linalg.lstsq(design_matrix, z_1, rcond=None)[0]
-        z_tilde = np.dot(fit, design_matrix.T)
+        beta = np.linalg.lstsq(design_matrix, z_1, rcond=None)[0]
+        z_tilde = np.dot(beta, design_matrix.T)
         
-        return np.reshape(z_tilde, (self.number_of_points, self.number_of_points))
+        return np.reshape(z_tilde, z.shape)
         
         
     def frankes_function(self, x, y, noise_magnitude=0.01):
@@ -132,11 +146,11 @@ if __name__ == '__main__':
     parser.add_argument('--plot', help='Plots the resulting functions side by side', action='store_true')
     args = parser.parse_args()
     
-    project = Project1(args.N, args.method, args.noise_magnitude, args.poly_degree)
+    fit = Regression(args.N, args.method, args.noise_magnitude, args.poly_degree)
     
     if args.plot:
-        project.plot()
+        fit.plot()
     if args.test:
-        project.test_error_analysis()
+        fit.test_error_analysis()
     
     
