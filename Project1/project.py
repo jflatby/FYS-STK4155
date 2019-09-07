@@ -97,17 +97,29 @@ class Project1:
         # plt.show()
         
     def mean_squared_error(self, z, z_tilde):
+        if len(z.shape) > 1:
+            z = np.ravel(z)
+            z_tilde = np.ravel(z_tilde)
+            
         return np.mean((z - z_tilde)**2)
     
     def r2_score(self, z, z_tilde):
-        return 1 - np.sum((z - z_tilde) ** 2) / np.sum((z - np.mean(z_tilde)) ** 2)
+        if len(z.shape) > 1:
+            z = np.ravel(z)
+            z_tilde = np.ravel(z_tilde)
+            
+        return 1 - np.sum((z - z_tilde) ** 2) / np.sum((z - np.mean(z)) ** 2)
     
     def test_error_analysis(self):
-        print(f"MSE(manual): {self.mean_squared_error(self.z, self.z_tilde)}")
-        print(f"MSE(sklearn): {metrics.mean_squared_error(self.z, self.z_tilde)}")
+        z = self.z.ravel()
+        z_tilde = self.z_tilde.ravel()
         print("-")
-        print(f"R^2 Score(manual): {self.r2_score(self.z, self.z_tilde)}")
-        print(f"R^2 Score(sklearn): {metrics.r2_score(self.z, self.z_tilde)}")
+        print(f"MSE(manual): {self.mean_squared_error(z, z_tilde)}")
+        print(f"MSE(sklearn): {metrics.mean_squared_error(z, z_tilde)}")
+        print("-")
+        print(f"R^2 Score(manual): {self.r2_score(z, z_tilde)}")
+        print(f"R^2 Score(sklearn): {metrics.r2_score(z, z_tilde)}")
+        print("-")
         
         
 if __name__ == '__main__':
