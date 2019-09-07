@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 plt.style.use('ggplot')
 
 
-class Regression:
+class LeastSquares:
     
     def __init__(self, N = 100, method = 'ols', noise_magnitude = 0.01, polynomial_degree = 5):
         self.number_of_points = N
@@ -22,6 +22,13 @@ class Regression:
         self.find_fit(method)
             
     def find_fit(self, method, split_data = False):
+        """
+        Use the selected method to find the best fit for the data.
+        
+        Returns:
+            nothing, sets self.z_tilde
+        """
+        ## TODO: split data into training and test-data if specified.
         if split_data:
             print(np.array(train_test_split(self.z)[1]).shape)
             
@@ -34,6 +41,12 @@ class Regression:
         
             
     def init_data(self, noise):
+        """
+        Initialize dataset using franke's function with given noise
+        magnitude and number of points on each axis.
+        Returns:
+            x, y, z -- Franke's function z(x, y) with added noise
+        """
         ## Create uniform grid
         x = np.sort(np.random.rand(self.number_of_points))
         y = np.sort(np.random.rand(self.number_of_points))
@@ -47,6 +60,13 @@ class Regression:
         
     
     def ordinary_least_squares(self, z, design_matrix):
+        """
+        Performs ordinary least squares on given data
+        
+        Returns:
+            z_tilde -- an array of same shape as z, containing values 
+                       corresponding to the fitted function.
+        """
         z_1 = np.ravel(z)
 
         beta = np.linalg.lstsq(design_matrix, z_1, rcond=None)[0]
@@ -89,6 +109,10 @@ class Regression:
         return X
 
     def plot(self):
+        """
+        Displays two 3-dimensional plots, one of the original data and
+        one of the computed best fit.
+        """
         fig = plt.figure(figsize=plt.figaspect(0.5))
         ax = fig.add_subplot(1, 2, 1, projection='3d')
         surf = ax.plot_surface(self.x, self.y, self.z, cmap=cm.coolwarm,
@@ -101,14 +125,6 @@ class Regression:
                             linewidth=0, antialiased=False)
         fig.colorbar(surf, shrink=0.5, aspect=5)
         plt.show()
-
-        #fig = plt.figure()
-        #ax = fig.gca(projection='3d')
-        #surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-        #fig.colorbar(surf, shrink=0.5, aspect=5)
-
-
-        # plt.show()
         
     def mean_squared_error(self, z, z_tilde):
         if len(z.shape) > 1:
@@ -125,6 +141,10 @@ class Regression:
         return 1 - np.sum((z - z_tilde) ** 2) / np.sum((z - np.mean(z)) ** 2)
     
     def test_error_analysis(self):
+        """
+        Compares the manual calculations of Mean Squared Error
+        and R-squared score with the ones calculated using sklearn.
+        """
         z = self.z.ravel()
         z_tilde = self.z_tilde.ravel()
         print("-")
@@ -146,7 +166,7 @@ if __name__ == '__main__':
     parser.add_argument('--plot', help='Plots the resulting functions side by side', action='store_true')
     args = parser.parse_args()
     
-    fit = Regression(args.N, args.method, args.noise_magnitude, args.poly_degree)
+    fit = LeastSquares(args.N, args.method, args.noise_magnitude, args.poly_degree)
     
     if args.plot:
         fit.plot()
