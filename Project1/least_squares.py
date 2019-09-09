@@ -14,14 +14,19 @@ class LeastSquares:
         self.number_of_points = N
         self.method = method
 
-        self.x, self.y, self.z = self.init_data(noise_magnitude)
+        self.training_data = None
+        self.test_data = None
         
-        ## create design_matrix
-        self.design_matrix = self.create_design_matrix(self.x, self.y, polynomial_degree)
+        self.X = None
+        self.y = None
         
-        self.find_fit(method)
+        ##Sets self.X and self.y using 
+        self.init_data(noise_magnitude)
+        
+        
+        self.find_fit(method, polynomial_degree, split_data=False)
             
-    def find_fit(self, method, split_data = False):
+    def find_fit(self, method, polynomial_degree, split_data = False):
         """
         Use the selected method to find the best fit for the data.
         
@@ -30,11 +35,19 @@ class LeastSquares:
         """
         ## TODO: split data into training and test-data if specified.
         if split_data:
-            print(np.array(train_test_split(self.z)[1]).shape)
+            x, y, z = np.ravel(self.X[0]), np.ravel(self.X[1]), np.ravel(self.y)
+            self.training_data, self.test_data = train_test_split(z)
+            x = train_test_split(x)[0]
+            y = train_test_split(y)[0]
+        else:
+            self.training_data = self.y
+            x, y = self.X
+            
+        self.design_matrix = self.create_design_matrix(x, y, polynomial_degree)
             
             
         if method == 'ols':
-            self.z_tilde = self.ordinary_least_squares(self.z, self.design_matrix)
+            self.y_tilde = self.ordinary_least_squares(self.training_data, self.design_matrix)
         else:
             print('invalid method.')
             return
@@ -53,10 +66,13 @@ class LeastSquares:
 
         x, y = np.meshgrid(x, y)
         
+        self.X = np.array([x, y])
+        
         ## Compute franke's function with noise
         z = self.frankes_function(x, y, noise)
         
-        return (x, y, z)
+        self.y = z
+        
         
     
     def ordinary_least_squares(self, z, design_matrix):
@@ -104,7 +120,7 @@ class LeastSquares:
         for i in range(1, n+1):
             q = int((i)*(i+1)/2)
             for k in range(i+1):
-                X[:, q+k] = x**(i-k) + y**k
+                X[:, q+k] = x**(i-k) * y**k
 
         return X
 
@@ -115,13 +131,13 @@ class LeastSquares:
         """
         fig = plt.figure(figsize=plt.figaspect(0.5))
         ax = fig.add_subplot(1, 2, 1, projection='3d')
-        surf = ax.plot_surface(self.x, self.y, self.z, cmap=cm.coolwarm,
+        surf = ax.plot_surface(self.X[0], self.X[1], self.y, cmap=cm.coolwarm,
                             linewidth=0, antialiased=False)
         fig.colorbar(surf, shrink=0.5, aspect=5)
 
 
         ax = fig.add_subplot(1, 2, 2, projection='3d')
-        surf = ax.plot_surface(self.x, self.y, self.z_tilde, cmap=cm.coolwarm,
+        surf = ax.plot_surface(self.X[0], self.X[1], self.y_tilde, cmap=cm.coolwarm,
                             linewidth=0, antialiased=False)
         fig.colorbar(surf, shrink=0.5, aspect=5)
         plt.show()
@@ -145,8 +161,8 @@ class LeastSquares:
         Compares the manual calculations of Mean Squared Error
         and R-squared score with the ones calculated using sklearn.
         """
-        z = self.z.ravel()
-        z_tilde = self.z_tilde.ravel()
+        z = self.y.ravel()
+        z_tilde = self.y_tilde.ravel()
         print("-")
         print(f"MSE(manual): {self.mean_squared_error(z, z_tilde)}")
         print(f"MSE(sklearn): {metrics.mean_squared_error(z, z_tilde)}")
