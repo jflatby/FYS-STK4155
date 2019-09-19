@@ -20,6 +20,7 @@ class LeastSquares:
         self.y = None
 
 
+
     def init_franke(self):
         """
         Initialize dataset using franke's function with given noise
@@ -76,7 +77,8 @@ class LeastSquares:
             data = np.ravel(data)
 
         if self.method == 'ols':
-            y_tilde = self.ordinary_least_squares(design_matrix, data)
+            beta = self.ordinary_least_squares(design_matrix, data)
+            y_tilde = np.dot(design_matrix, beta)
             return y_tilde
         else:
             print('invalid method.')
@@ -92,6 +94,10 @@ class LeastSquares:
         data = data.reshape(10000)
 
         fold_size = self.total_data_points // k
+
+        mse_train, mse_test = np.zeros(k), np.zeros(k)
+
+
 
 
         for i in range(k):
@@ -119,10 +125,15 @@ class LeastSquares:
             design_matrix_test = self.create_design_matrix(x_test)
             test_prediction = np.dot(design_matrix_test, beta)
 
-            mse_train = self.mean_squared_error(training_data, training_prediction)
-            mse_test = self.mean_squared_error(test_data, test_prediction)
-            print(mse_train, mse_test)
+            mse_train[i] = self.mean_squared_error(training_data, training_prediction)
+            mse_test[i] = self.mean_squared_error(test_data, test_prediction)
 
+
+        mse_training_value = np.mean(mse_train)
+        mse_test_value = np.mean(mse_test)
+
+
+        print(mse_training_value, mse_test_value)
 
 
 
@@ -138,7 +149,7 @@ class LeastSquares:
 
         #y_tilde = np.dot(beta, design_matrix.T)
 
-        return beta #y_tilde
+        return beta
 
 
 
@@ -154,7 +165,7 @@ class LeastSquares:
             + 0.75*np.exp(-(9*x + 1)**2 / 49 - (9*y + 1) / 10) \
             + 0.5*np.exp(-(9*x - 7)**2 / 4 - (9*y - 3)**2 / 4) \
             - 0.2*np.exp(-(9*x - 4)**2 - (9*y - 7)**2) \
-            + noise_magnitude * np.random.randn(len(x))
+            + noise_magnitude * np.random.randn(len(x), len(x))
 
 
 
