@@ -17,16 +17,17 @@ class LeastSquares:
         self.training_data = None
         self.test_data = None
         
-        self.X = None
+        self.x = None
         self.y = None
         
         ##Sets self.X and self.y using 
         self.init_data(noise_magnitude)
         
+        self.design_matrix = self.create_design_matrix(self.x, polynomial_degree)
         
-        self.find_fit(method, polynomial_degree, split_data=False)
+        self.find_fit(method, split_data=True)
             
-    def find_fit(self, method, polynomial_degree, split_data = False):
+    def find_fit(self, method, split_data = False):
         """
         Use the selected method to find the best fit for the data.
         
@@ -35,22 +36,25 @@ class LeastSquares:
         """
         ## TODO: split data into training and test-data if specified.
         if split_data:
-            x, y, z = np.ravel(self.X[0]), np.ravel(self.X[1]), np.ravel(self.y)
-            self.training_data, self.test_data = train_test_split(z)
-            x = train_test_split(x)[0]
-            y = train_test_split(y)[0]
+            y = np.ravel(self.y)
+            design_train, design_test, y_train, y_test = train_test_split(self.design_matrix, y, test_size=0.2)
+            y_tilde = self.ordinary_least_squares(design_train, y_train)
+            y_predict = self.ordinary_least_squares(design_test, y_test, training_matrix=design_train)
+            
+            self.test_error_analysis(y_train, y_tilde)
+            self.test_error_analysis(y_test, y_predict)
+            
         else:
-            self.training_data = self.y
-            x, y = self.X
+            y = self.y
+            x = self.x
+
             
-        self.design_matrix = self.create_design_matrix(x, y, polynomial_degree)
             
-            
-        if method == 'ols':
-            self.y_tilde = self.ordinary_least_squares(self.training_data, self.design_matrix)
-        else:
-            print('invalid method.')
-            return
+            if method == 'ols':
+                self.y_tilde = self.ordinary_least_squares(self.training_data, self.design_matrix)
+            else:
+                print('invalid method.')
+                return
         
             
     def init_data(self, noise):
@@ -66,7 +70,7 @@ class LeastSquares:
 
         x, y = np.meshgrid(x, y)
         
-        self.X = np.array([x, y])
+        self.x = np.array([x, y])
         
         ## Compute franke's function with noise
         z = self.frankes_function(x, y, noise)
@@ -75,7 +79,7 @@ class LeastSquares:
         
         
     
-    def ordinary_least_squares(self, z, design_matrix):
+    def ordinary_least_squares(self, design_matrix, z, training_matrix = [], training_y = []):
         """
         Performs ordinary least squares on given data
         
@@ -83,12 +87,18 @@ class LeastSquares:
             z_tilde -- an array of same shape as z, containing values 
                        corresponding to the fitted function.
         """
-        z_1 = np.ravel(z)
-
-        beta = np.linalg.lstsq(design_matrix, z_1, rcond=None)[0]
+        z1 = z
+        if len(z.shape) > 1:
+            z1 = np.ravel(z)
+        
+        if len(training_matrix) == 0 or len(training_y) == 0:
+            beta = np.linalg.lstsq(design_matrix, z1, rcond=None)[0]
+        else:
+            beta = np.linalg.lstsq(training_matrix, training_y, rcond=None)[0]
+            
         z_tilde = np.dot(beta, design_matrix.T)
         
-        return np.reshape(z_tilde, z.shape)
+        return z_tilde
         
         
     def frankes_function(self, x, y, noise_magnitude=0.01):
@@ -104,11 +114,12 @@ class LeastSquares:
             - 0.2*np.exp(-(9*x - 4)**2 - (9*y - 7)**2) \
             + noise_magnitude * np.random.randn(len(x))
 
-    def create_design_matrix(self, x, y, n=5):
+    def create_design_matrix(self, X, n=5):
         """
         Function for creating a design X-matrix with rows [1, x, y, x^2, xy, xy^2 , etc.]
         Input is x and y mesh or raveled mesh, keyword agruments n is the degree of the polynomial you want to fit.
         """
+        x, y = X
         if len(x.shape) > 1:
             x = np.ravel(x)
             y = np.ravel(y)
@@ -156,19 +167,19 @@ class LeastSquares:
             
         return 1 - np.sum((z - z_tilde) ** 2) / np.sum((z - np.mean(z)) ** 2)
     
-    def test_error_analysis(self):
+    def test_error_analysis(self, y, y_tilde):
         """
         Compares the manual calculations of Mean Squared Error
         and R-squared score with the ones calculated using sklearn.
         """
-        z = self.y.ravel()
-        z_tilde = self.y_tilde.ravel()
+        y = y.ravel()
+        y_tilde = y_tilde.ravel()
         print("-")
-        print(f"MSE(manual): {self.mean_squared_error(z, z_tilde)}")
-        print(f"MSE(sklearn): {metrics.mean_squared_error(z, z_tilde)}")
+        print(f"MSE(manual): {self.mean_squared_error(y, y_tilde)}")
+        print(f"MSE(sklearn): {metrics.mean_squared_error(y, y_tilde)}")
         print("-")
-        print(f"R^2 Score(manual): {self.r2_score(z, z_tilde)}")
-        print(f"R^2 Score(sklearn): {metrics.r2_score(z, z_tilde)}")
+        print(f"R^2 Score(manual): {self.r2_score(y, y_tilde)}")
+        print(f"R^2 Score(sklearn): {metrics.r2_score(y, y_tilde)}")
         print("-")
         
         
