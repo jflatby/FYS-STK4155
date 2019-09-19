@@ -3,18 +3,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+from numba import jit
 import sklearn.metrics as metrics
 from sklearn.model_selection import train_test_split
+from sklearn import linear_model
 plt.style.use('ggplot')
 
 
-class LeastSquares:
-    def __init__(self, N = 100, method = 'ols', noise_magnitude = 0.01, polynomial_degree = 5):
+
+
+class Regression:
+    def __init__(self, N = 100, method = 'ols', noise_magnitude = 0.01, polynomial_degree = 5, lambda_ = 0.001):
         self.number_of_points = N
         self.total_data_points = N * N
         self.method = method
         self.degree = polynomial_degree
         self.noise = noise_magnitude
+        self.lambda_ = lambda_
 
         self.x = None
         self.y = None
@@ -65,7 +70,7 @@ class LeastSquares:
         return X
 
 
-
+    @jit
     def find_fit(self, data, design_matrix):
         """
         Use the selected method to find the best fit for the data.
@@ -80,12 +85,21 @@ class LeastSquares:
             beta = self.ordinary_least_squares(design_matrix, data)
             y_tilde = np.dot(design_matrix, beta)
             return y_tilde
+        elif self.method == 'ridge':
+            beta = self.ridge_regression(design_matrix, data)
+            y_tilde = np.dot(design_matrix, beta)
+            return y_tilde
+        elif self.method == 'lasso':
+            beta = self.lasso_regression(design_matrix, data)
+            y_tilde = np.dot(design_matrix, beta)
+            return y_tilde
+
         else:
             print('invalid method.')
             return
 
 
-
+    @jit
     def cross_validation(self, x, data, k=5):
         """
         Implementation of the k-fold cross validation algorithm.
@@ -136,7 +150,7 @@ class LeastSquares:
         print(mse_training_value, mse_test_value)
 
 
-
+    @jit
     def ordinary_least_squares(self, design_matrix, y):
         """
         Performs ordinary least squares on given data
@@ -152,6 +166,23 @@ class LeastSquares:
         return beta
 
 
+    @jit
+    def ridge_regression(self, design_matrix, y):
+        beta = np.dot(np.linalg.inv(np.dot(np.transpose(design_matrix), design_matrix) + self.lambda_ * np.eye(design_matrix.shape[1])), np.dot(np.transpose(design_matrix),y))
+
+        return beta
+
+
+    @jit
+    def lasso_regression(self, design_matrix, y):
+        model = linear_model.Lasso(fit_intercept=True, max_iter=100000, alpha=self.lambda_)
+        model.fit(design_matrix, y)
+        print(design_matrix, y)
+        beta = model.coef_
+        beta[0] = model.intercept_
+        print(beta)
+        return beta
+
 
     def frankes_function(self, x, noise_magnitude=0.01):
         """
@@ -166,28 +197,6 @@ class LeastSquares:
             + 0.5*np.exp(-(9*x - 7)**2 / 4 - (9*y - 3)**2 / 4) \
             - 0.2*np.exp(-(9*x - 4)**2 - (9*y - 7)**2) \
             + noise_magnitude * np.random.randn(len(x), len(x))
-
-
-
-    def plot(self, x, y, y_tilde):
-        """
-        Displays two 3-dimensional plots, one of the original data and
-        one of the computed best fit.
-        """
-        y_tilde = np.reshape(y_tilde, np.shape(x[0]))
-        #print(f"x: {x.shape} \n y: {y.shape} \n y_tilde: {y_tilde.shape}")
-        fig = plt.figure(figsize=plt.figaspect(0.5))
-        ax = fig.add_subplot(1, 2, 1, projection='3d')
-        surf = ax.plot_surface(x[0], x[1], y, cmap=cm.coolwarm,
-                            linewidth=0, antialiased=False)
-        fig.colorbar(surf, shrink=0.5, aspect=5)
-
-
-        ax = fig.add_subplot(1, 2, 2, projection='3d')
-        surf = ax.plot_surface(x[0], x[1], y_tilde, cmap=cm.coolwarm,
-                            linewidth=0, antialiased=False)
-        fig.colorbar(surf, shrink=0.5, aspect=5)
-        plt.show()
 
 
 
@@ -226,6 +235,34 @@ class LeastSquares:
 
 
 
+    def plot(self, x, y, y_tilde):
+        """
+        Displays two 3-dimensional plots, one of the original data and
+        one of the computed best fit.
+        """
+        y_tilde = np.reshape(y_tilde, np.shape(x[0]))
+        #print(f"x: {x.shape} \n y: {y.shape} \n y_tilde: {y_tilde.shape}")
+        fig = plt.figure(figsize=(20, 9))
+        ax = fig.add_subplot(1, 2, 1, projection='3d')
+        ax.set_title('Data')
+        surf = ax.plot_surface(x[0], x[1], y, cmap=cm.coolwarm,
+                            linewidth=0, antialiased=False)
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+
+
+        ax = fig.add_subplot(1, 2, 2, projection='3d')
+        ax.set_title(f'Regression Fit ({self.method.capitalize()})')
+        surf = ax.plot_surface(x[0], x[1], y_tilde, cmap=cm.coolwarm,
+                            linewidth=0, antialiased=False)
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        fig.tight_layout()
+
+
+        plt.show()
+
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', dest='method', type=str, help='Regression method', default='ols')
@@ -235,19 +272,20 @@ if __name__ == '__main__':
     parser.add_argument('--test', help='Runs test functions', action='store_true')
     parser.add_argument('--plot', help='Plots the resulting functions side by side', action='store_true')
     parser.add_argument('--cross', help='Use cross validation', action='store_true')
+    parser.add_argument('-l', dest='lambda_', type=float, help='Pentalty term for ridge and lasso regression', default=0.001)
     args = parser.parse_args()
 
-    least_squares = LeastSquares(args.N, args.method, args.noise_magnitude, args.poly_degree)
+    regression = Regression(args.N, args.method, args.noise_magnitude, args.poly_degree, args.lambda_)
 
-    x, y = least_squares.init_franke()
+    x, y = regression.init_franke()
 
     if args.cross:
-        least_squares.cross_validation(x, y)
+        regression.cross_validation(x, y)
     else:
-        design_matrix = least_squares.create_design_matrix(x)
-        y_tilde = least_squares.find_fit(y, design_matrix)
+        design_matrix = regression.create_design_matrix(x)
+        y_tilde = regression.find_fit(y, design_matrix)
 
     if args.plot:
-        least_squares.plot(x, y, y_tilde)
+        regression.plot(x, y, y_tilde)
     if args.test:
-        least_squares.test_error_analysis(y, y_tilde)
+        regression.test_error_analysis(y, y_tilde)
