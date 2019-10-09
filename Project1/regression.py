@@ -27,10 +27,13 @@ def frankes_function(x, noise_magnitude = 0.1):
             + noise_magnitude * np.random.randn(len(x), len(x))  
 
 class Regression:
-    def __init__(self, x, y, regression_method, solve_method, poly_degree, lambda_ = 0.001):
+    def __init__(self, x, y, regression_method, poly_degree, lambda_ = 0.001):
+        """
+        This class takes a dataset x, y, a regression method (ols, ridge, lasso), a polynomial degree to use for the fit and
+        optionally a lambda-value in the case of ridge or lasso regression.
+        """
         self.y = y
         self.regression_method = regression_method
-        self.solve_method = solve_method
         self.lambda_ = lambda_
         self.poly_degree = poly_degree
         self.X = self.create_design_matrix(x)
@@ -38,7 +41,7 @@ class Regression:
     def create_design_matrix(self, x):
         """
         Function for creating a design X-matrix with rows [1, x, y, x^2, xy, xy^2 , etc.]
-        Input is x and y mesh or raveled mesh, keyword agruments n is the degree of the polynomial you want to fit.
+        Input is x=[x, y] mesh or raveled mesh, keyword agruments n is the degree of the polynomial you want to fit.
         """
         x, y = x
         if len(x.shape) > 1:
@@ -62,7 +65,7 @@ class Regression:
         Use the selected method to find the best fit for the data.
 
         Returns:
-            nothing, sets self.z_tilde
+            beta-coefficients for the best fit using the selected method and properties.
         """
         if len(data.shape) > 1:
             data = np.ravel(data)
@@ -81,17 +84,39 @@ class Regression:
         return beta
         
     def ordinary_least_squares(self, X, y):
+        """
+        Performs ordinary least squares using np.linalg.lstsq
+        SVD does also work but was never fully implemented.
+        
+        Returns:
+            array of beta-values
+        """
         beta = np.linalg.lstsq(X, y, rcond=None)[0]
+        
         #u, s, v = scl.svd(X)
         #beta = v.T @ scl.pinv(scl.diagsvd(s, u.shape[0], v.shape[0])) @ u.T @ y
+        
         return beta
         
     def ridge_regression(self, X, y):
+        """
+        Performs ridge regression on the given data
+        
+        Returns:
+            Array of beta-values
+        """
         beta = np.dot(np.linalg.inv(np.dot(np.transpose(X), X) + self.lambda_ * np.eye(X.shape[1])), np.dot(np.transpose(X),y))
 
         return beta
 
     def lasso_regression(self, X, y):
+        """
+        Performs lasso regression on the given data using sklearns Lasso
+        class.
+        
+        Returns:
+            Array of beta-values
+        """
         model = linear_model.Lasso(fit_intercept=True, max_iter=1000000, alpha=self.lambda_)
         model.fit(X, y)
         beta = model.coef_
@@ -99,6 +124,15 @@ class Regression:
         return beta
    
     def k_fold(self, x, y, k=5):
+        """
+        Takes x and y data, loops through k times and splits the 
+        dataset into different training and test sets each time,
+        and produces a prediction on the test set using beta-values
+        "learned" from the training set. 
+        
+        Returns:
+            Mean Squared Error, Bias, Variance, R^2 score
+        """
         kfold = KFold(n_splits = k,shuffle=True,random_state=5)
         y = y.ravel()
         
@@ -138,6 +172,9 @@ class Regression:
         return error, bias, variance, r2_score
     
     def mean_squared_error(self, y, y_tilde):
+        """
+        Returns the means squared error between y and y_tilde
+        """
         if len(y.shape) > 1:
             y = np.ravel(y)
             
@@ -146,6 +183,9 @@ class Regression:
         return np.mean((y - y_tilde)**2)
 
     def r2_score(self, y, y_tilde):
+        """
+        Computes R^2 score, indicating how well y_tilde fits y
+        """
         if len(y.shape) > 1:
             y = np.ravel(y)
             y_tilde = np.ravel(y_tilde)
@@ -153,6 +193,13 @@ class Regression:
         return 1 - np.sum((y - y_tilde) ** 2) / np.sum((y - np.mean(y)) ** 2)
 
     def confidence(self, beta, X, confidence=1.96):
+        """
+        Computes confidence intervals of the beta coefficients using the chosen
+        confidence value.
+        
+        Returns:
+            betamin and betamax
+        """
         weight = np.sqrt( np.diag( np.linalg.inv( X.T @ X ) ) )*confidence
         betamin = beta - weight
         betamax = beta + weight
@@ -186,6 +233,9 @@ class Regression:
         plt.show()
         
     def plot_contour(self, x, y, y_tilde):
+        """
+        Make a contour plot of the data
+        """
         y_tilde = np.reshape(y_tilde, np.shape(x[0]))
 
         skalle = plt.imshow(y_tilde, extent=[0, 1, 0, 1], origin='lower', alpha=1.0, cmap='gist_earth')
@@ -209,14 +259,18 @@ class Regression:
         print("-")
         
 
-def test_confidence(N, regression_method="ols", skalle="skalle", poly_degree=5):
+def test_confidence(N, regression_method="ols", poly_degree=5):
+    """
+    Plot the confidence intervals on the different beta-values
+    created by the regression fit.
+    """
     x = np.sort(np.random.rand(100))
     y = np.sort(np.random.rand(100))
     x, y = np.meshgrid(x, y)
     
     x = np.array([x, y])
     
-    regr = Regression(x, y, regression_method, skalle, poly_degree)
+    regr = Regression(x, y, regression_method, poly_degree)
     
     y = frankes_function(x)
     
@@ -237,7 +291,11 @@ def test_confidence(N, regression_method="ols", skalle="skalle", poly_degree=5):
     
 
 def loop_over_poly(start, end, step, regression_method="ols"):
-     
+    """
+    Loop over the polynomial degree and perform the chosen regression
+    a given amount of times, and plot the resulting error values(from the kfold function)
+    against model complexity.
+    """
     degrees = np.arange(start, end, step)
     
     x = np.sort(np.random.rand(100))
@@ -255,7 +313,7 @@ def loop_over_poly(start, end, step, regression_method="ols"):
     bias = []
     variance = []
     for deg in degrees:
-        regr = Regression(x, y, regression_method, "budeie", deg)
+        regr = Regression(x, y, regression_method, deg)
         print(f"Degree: {deg}")
         
         err, bi, var, r2 = regr.k_fold(x, y)
@@ -289,7 +347,7 @@ def loop_over_poly(start, end, step, regression_method="ols"):
     plt.legend()
     plt.show()
         
-    return error, bias, variance, r2
+    #return error, bias, variance, r2
     
      
     ## plot mse, bias, variance
@@ -307,6 +365,11 @@ def loop_over_poly(start, end, step, regression_method="ols"):
     
     
 def loop_poly_and_lambda(x, y, regression_method="ridge", degree_end=15):
+    """
+    Loop over polynomial degree just like the above function(These should have been made so that
+    this function uses the above one..) 
+    Also loops over different degrees of lambda and plot all of them as their own line vs model complexity.
+    """
     N_deg = degree_end
     
     degrees = np.arange(1, N_deg+1, 1)
@@ -322,7 +385,7 @@ def loop_poly_and_lambda(x, y, regression_method="ridge", degree_end=15):
     for i in range(len(degrees)):
         print(f"Degree: {i+1}")
         for j in range(len(lambdas)):
-            regr = Regression(x, y, regression_method, "budeie", degrees[i], lambdas[j])
+            regr = Regression(x, y, regression_method, degrees[i], lambdas[j])
             
             err, bi, var, r2 = regr.k_fold(x, y)
             
@@ -373,7 +436,7 @@ def loop_poly_and_lambda(x, y, regression_method="ridge", degree_end=15):
         
     plt.show()
     
-    return error, bias, variance, r2_score
+    #return error, bias, variance, r2_score
 
 def read_tif_file(file):
     data = imread(file)
@@ -399,12 +462,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', dest='method', type=str, help='Regression method', default='ols')
     parser.add_argument('-degree', dest='poly_degree', type=int, help='Polynomial degree for design matrix', default=5)
-    parser.add_argument('-noise', dest='noise_magnitude', type=float, help='Magnitude for the noise added to Frankes function', default=0.01)
-    parser.add_argument('-n', dest='N', type=int, help='Number of points in x- and y-directions', default=100)
+    #parser.add_argument('-noise', dest='noise_magnitude', type=float, help='Magnitude for the noise added to Frankes function', default=0.01)
     parser.add_argument('-l', dest='lambda_', type=float, help='Pentalty term for ridge and lasso regression', default=0.001)
     parser.add_argument('--test', help='Runs test functions', action='store_true')
     parser.add_argument('--plot', help='Plots the data and the fit side by side', action='store_true')
-    parser.add_argument('--cross', help='Use cross validation', action='store_true')
     parser.add_argument('--terrain', help='Use terrain data instead of Frankes Function', action='store_true')
     args = parser.parse_args()
     
@@ -412,7 +473,7 @@ if __name__ == "__main__":
     x = np.array([x, y])
     y = z
     
-    #error, bias, variance, r2_score = loop_poly_and_lambda(x, y, args.method, degree_end=15)
+    #loop_poly_and_lambda(x, y, args.method, degree_end=15)
     
     #"""
     if (args.terrain):
@@ -420,7 +481,7 @@ if __name__ == "__main__":
         x = np.array([x, y])
         y = data/np.max(data)
         
-        regr = Regression(x, y, args.method, "inv", args.poly_degree, args.lambda_)
+        regr = Regression(x, y, args.method, args.poly_degree, args.lambda_)
         
         """ 
         X = regr.create_design_matrix(x)
@@ -441,7 +502,7 @@ if __name__ == "__main__":
         
         y = frankes_function(x)
         
-        regr = Regression(x, y, args.method, "inv", args.poly_degree, args.lambda_)
+        regr = Regression(x, y, args.method, args.poly_degree, args.lambda_)
         
         X = regr.create_design_matrix(x)
         beta = regr.find_fit(X, y)
@@ -463,4 +524,5 @@ if __name__ == "__main__":
     #print(np.array(error).shape, np.array(bias).shape, np.array(variance).shape, np.array(r2_score).shape)
     #loop_over_poly(1, 30, 1, args.method)
     #test_confidence(100)
+    
     #"""
