@@ -7,7 +7,6 @@ from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score
 from data_handling import read_data
 
 
-df = read_data(filtered=True)
 
 
 
@@ -29,8 +28,8 @@ def create_design_matrix(dataframe, prediction_target='defaultPaymentNextMonth')
     """
 
 
-    features = dataframe.loc[:, df.columns != prediction_target].values
-    target = dataframe.loc[:, df.columns == prediction_target].values
+    features = dataframe.loc[:, dataframe.columns != prediction_target].values
+    target = dataframe.loc[:, dataframe.columns == prediction_target].values
 
     onehotencoder = OneHotEncoder(categories='auto')
 
@@ -43,23 +42,12 @@ def create_design_matrix(dataframe, prediction_target='defaultPaymentNextMonth')
 
 
 
-def cost_function(design_matrix, beta, target):
+def cross_entropy(design_matrix, beta, target):
     p = np.dot(design_matrix, beta)
     loss = -np.sum(target*p - np.log(1 + np.exp(p)))
 
     return loss
 
 
-
-
-
-
-
-stochastic_gradient_descent():
-
-
-
-
-
-
-design_matrix, target = create_design_matrix(df)
+if __name__=='__main__':
+    df = read_data(filtered=True)
