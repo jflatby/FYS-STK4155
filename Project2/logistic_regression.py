@@ -43,10 +43,23 @@ def create_design_matrix(dataframe, prediction_target='defaultPaymentNextMonth')
 
 
 
-def cross_entropy(design_matrix, ):
-    return
+def cost_function(design_matrix, beta, target):
+    p = np.dot(design_matrix, beta)
+    loss = -np.sum(target*p - np.log(1 + np.exp(p)))
+
+    return loss
+
+
+
+
+
+
+
+stochastic_gradient_descent():
+
+
+
 
 
 
 design_matrix, target = create_design_matrix(df)
-print(design_matrix.shape, target.shape)
