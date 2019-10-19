@@ -43,7 +43,7 @@ class NeuralNetwork:
 
 
 
-        z = [0 for i in range(self.number_of_layers-1)]
+        self.z = [0 for i in range(self.number_of_layers-1)]
         """
         for l in range(self.number_of_layers-1):
             for j in range(self.network_shape[i+1]):
@@ -62,16 +62,13 @@ class NeuralNetwork:
         for i, l in enumerate(self.network_shape[1:]):
             print(f'i: {i}')
             if i == 0:
-                z[i] = self.sigmoid(np.matmul(self.x_data, self.weights[i].T))
-                print(f'z shape: {z[i].shape}\n')
-            elif i == number_of_layers-1:
-                z[i] =
+                self.z[i] = self.sigmoid(np.matmul(self.x_data, self.weights[i].T) + self.bias[i])
+                print(f'z shape: {self.z[i].shape}\n')
             else:
-                z[i] = self.sigmoid(np.matmul(z[i-1], self.weights[i].T))
-                print(f'z shape: {z[i].shape}\n')
+                self.z[i] = self.sigmoid(np.matmul(self.z[i-1], self.weights[i].T) + self.bias[i])
+                print(f'z shape: {self.z[i].shape}\n')
         #"""
 
-        print(z)
 
 
 
@@ -108,3 +105,4 @@ if __name__=='__main__':
 
     print('Feedforward: \n')
     neural_net.feed_forward()
+    print(f'z: {neural_net.z}')
