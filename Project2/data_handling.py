@@ -5,8 +5,6 @@ import pandas as pd
 import seaborn as sbr
 import argparse
 
-
-
 def read_data(filtered=True):
     """
     column names:
@@ -36,7 +34,7 @@ def filter_data(df, filename='filtered_credit_card_data.xls'):
     Parameters:
     df (pandas dataframe): dataframe containing dataset of credit card
                                     default data.
-    filename (str): filename of file to save to. 
+    filename (str): filename of file to save to.
     """
 
     # Drop unnecessary values
@@ -115,6 +113,18 @@ def generate_histogram(dataframe, category):
 
 
 
+def generate_correlation_matrix(dataframe):
+    f = plt.figure(figsize=(19, 15))
+    plt.matshow(dataframe.corr(), fignum=f.number)
+    plt.xticks(range(dataframe.shape[1]), dataframe.columns, fontsize=14, rotation=90)
+    plt.yticks(range(dataframe.shape[1]), dataframe.columns, fontsize=14)
+    cb = plt.colorbar()
+    cb.ax.tick_params(labelsize=14)
+    #plt.tight_layout()
+    plt.show()
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--filtered', help='uses filtered credit card data', action='store_true')
@@ -122,6 +132,7 @@ if __name__ == '__main__':
     dataframe = read_data(filtered=args.filtered)
 
 
+    generate_correlation_matrix(dataframe)
     #generate_scatter(dataframe, 'MARRIAGE', 'AGE')
     #generate_jointplot(dataframe, 'MARRIAGE', 'AGE')
     #generate_histogram(dataframe, 'AGE')

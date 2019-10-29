@@ -85,7 +85,7 @@ class NeuralNetwork:
                 weights_gradients[l] = np.matmul(self.z[l-1].T, layer_error)
                 bias_gradients[l] = np.sum(layer_error, axis=0)
                 
-                layer_error = np.matmul(layer_error, self.weights[l]) * self.z[l-1] * (1 - self.z[l-1])
+            layer_error = np.matmul(layer_error, self.weights[l]) * self.z[l-1] * (1 - self.z[l-1])
             
             self.weights[l] -= self.learning_rate * np.array(weights_gradients[l]).T
             self.bias[l] -= self.learning_rate * np.array(bias_gradients[l])
