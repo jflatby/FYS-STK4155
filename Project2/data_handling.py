@@ -39,8 +39,8 @@ def filter_data(df, filename='filtered_credit_card_data.xls'):
 
     # Drop unnecessary values
     df = df.drop(df[(df.MARRIAGE == 0)].index)
-    df = df.drop(df[(df.EDUCATION == 0) |
-                    (df.EDUCATION == 5) |
+    df = df.drop(df[(df.EDUCATION == 0) &
+                    (df.EDUCATION == 5) &
                     (df.EDUCATION == 6)].index)
 
     df.to_excel(filename)

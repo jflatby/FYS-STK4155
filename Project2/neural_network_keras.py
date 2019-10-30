@@ -148,13 +148,13 @@ if __name__ == "__main__":
     X_train, X_test, Y_train, Y_test = train_test_split(features, targets, test_size=0.2, shuffle=True)
     print(f'data train shape: {X_train.shape} ------- target shape: {Y_train.shape}')
     
-    epochs = 100
-    batch_size = 100
-    n_neurons_layer1 = 100
+    epochs = 10
+    batch_size = 1000
+    n_neurons_layer1 = 23
     n_neurons_layer2 = 50
-    n_categories = 10
-    eta_vals = np.logspace(-5, 1, 7)
-    lmbd_vals = np.logspace(-5, 1, 7)
+    n_categories = 1
+    eta_vals = [1e-3]#np.logspace(-5, 1, 7)
+    lmbd_vals = [1e-3]#np.logspace(-5, 1, 7)
 
     DNN_tf = np.zeros((len(eta_vals), len(lmbd_vals)), dtype=object)
             
@@ -175,7 +175,7 @@ if __name__ == "__main__":
             
     # visual representation of grid search
     # uses seaborn heatmap, could probably do this in matplotlib
-
+    """
     sns.set()
 
     train_accuracy = np.zeros((len(eta_vals), len(lmbd_vals)))
@@ -202,3 +202,4 @@ if __name__ == "__main__":
     ax.set_ylabel("$\eta$")
     ax.set_xlabel("$\lambda$")
     plt.show()
+    """

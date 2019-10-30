@@ -10,7 +10,7 @@ np.random.seed(1337)
 
 
 class NeuralNetwork:
-    def __init__(self, x_data, y_data, network_shape, learning_rate=0.01, epochs=100, batches=50):
+    def __init__(self, x_data, y_data, network_shape, learning_rate=0.01, epochs=10, batches=50):
         self.x_data_full = x_data
         self.y_data_full = y_data
         self.network_shape = network_shape
@@ -57,14 +57,18 @@ class NeuralNetwork:
         for i, l in enumerate(self.network_shape[1:]):
             if i == 0:
                 self.z[i] = self.sigmoid(np.matmul(self.x_data, self.weights[i].T) + self.bias[i])
+                
+            elif i == len(self.network_shape[1:]) - 1:
+                z = np.matmul(self.z[i-1], self.weights[i].T) + self.bias[i]
+                self.z[i] = np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
+                
             else:
                 self.z[i] = self.sigmoid(np.matmul(self.z[i-1], self.weights[i].T) + self.bias[i])
 
 
-    def predict(self, x, probability = False):
+    def predict(self, x, probability = True):
         self.x_data = x
         self.feed_forward()
-        
         if probability:
             return self.z[-1]
         else:
@@ -75,7 +79,6 @@ class NeuralNetwork:
         layer_error = self.z[-1] - self.y_data
         weights_gradients = [0 for i in range(self.number_of_layers-1)]
         bias_gradients = [0 for i in range(self.number_of_layers-1)]
-        
         for l in range(self.number_of_layers-2, -1, -1 ):
             if(l == 0): 
                 weights_gradients[l] = np.matmul(self.x_data.T, layer_error)
@@ -141,7 +144,9 @@ if __name__=='__main__':
     
     #prediction = neural_net.predict(data_test)
     
-    print(np.unique(neural_net.predict(data_test, probability=True)))
+    #print(prediction)
+    
+    #print(np.unique(neural_net.predict(data_test, probability=True)))
     print(np.unique(neural_net.predict(data_test), return_counts=True))
     #for i in range(len(data_test)):
     #    print(mean_squared_error(targets_test, prediction[i]))
