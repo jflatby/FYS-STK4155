@@ -19,7 +19,7 @@ def read_data(filtered=True):
 
     nanDict = {}
     if filtered:
-        df = pd.read_excel('filtered_credit_card_data.xls', header=0, skiprows=0, index_col=0, na_values=nanDict)
+        df = pd.read_excel('credit_card_remove_correlation.xls', header=0, skiprows=0, index_col=0, na_values=nanDict)
     else:
         df = pd.read_excel('default_of_credit_card_clients.xls', header=1, skiprows=0, index_col=0, na_values=nanDict)
         df.rename(index=str, columns={'default payment next month': 'defaultPaymentNextMonth'}, inplace=True)
@@ -42,6 +42,12 @@ def filter_data(df, filename='filtered_credit_card_data.xls'):
     df = df.drop(df[(df.EDUCATION == 0) &
                     (df.EDUCATION == 5) &
                     (df.EDUCATION == 6)].index)
+    
+    df = df.drop('BILL_AMT6')
+    df = df.drop('BILL_AMT5')
+    df = df.drop('BILL_AMT4')
+    df = df.drop('BILL_AMT3')
+    df = df.drop('BILL_AMT2')
 
     df.to_excel(filename)
 
@@ -129,9 +135,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--filtered', help='uses filtered credit card data', action='store_true')
     args = parser.parse_args()
+    
     dataframe = read_data(filtered=args.filtered)
 
-
+    
     generate_correlation_matrix(dataframe)
     #generate_scatter(dataframe, 'MARRIAGE', 'AGE')
     #generate_jointplot(dataframe, 'MARRIAGE', 'AGE')
