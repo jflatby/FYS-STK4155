@@ -129,6 +129,24 @@ def generate_correlation_matrix(dataframe):
     #plt.tight_layout()
     plt.show()
 
+def frankes_function(x, y, noise_magnitude):
+    term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
+    term2 = 0.75*np.exp(-((9*x+1)**2)/49.  - 0.1*(9*y+1))
+    term3 = 0.50*np.exp(-(9*x-7)**2 / 4.   - 0.25*((9*y-3)**2))
+    term4 = -0.2*np.exp(-(9*x-4)**2        - (9*y-7)**2)
+    noise =  noise_magnitude * np.random.randn(len(x), len(x)) 
+
+    return term1 + term2 + term3 + term4
+
+def get_franke_data(N):
+    
+    x, y = np.linspace(0, 1, N), np.linspace(0, 1, N)
+    x, y = np.meshgrid(x, y)
+    z = frankes_function(x, y, 0.05)
+    
+    X = x, y
+    
+    return X, z
 
 
 if __name__ == '__main__':

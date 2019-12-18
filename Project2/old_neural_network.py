@@ -23,8 +23,6 @@ from sklearn.neural_network import MLPClassifier
 plt.style.use("ggplot")
 np.random.seed(1337)
 
-
-
 class NeuralNetwork:
     def __init__(self, x_data, y_data, network_shape, learning_rate=0.01, epochs=100, batches=50, lmbd=0.001):
         self.x_data_full = x_data

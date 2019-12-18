@@ -69,7 +69,6 @@ class NeuralNetwork:
         """
         b_gradient = np.sum(layer_error, axis=0)
         w_gradient = np.matmul(self.a[l].T, layer_error)
-        #print(layer_error)
         if self.lmbd > 0:
             w_gradient += self.lmbd * self.w[l]
         
@@ -90,7 +89,6 @@ class NeuralNetwork:
         #Loop backwards through rest of layers
         for l in range(len(self.hidden_layers), 0, -1):
             layer_error = np.matmul(layer_error, self.w[l].T) * self.activation_derivative(self.a[l], self.h_activation_funcs[l-1])
-            
             b_gradient, w_gradient = self.gradients(layer_error, l-1)
             self.b[l-1] -= self.eta * b_gradient / len(self.X)
             self.w[l-1] -= self.eta * w_gradient / len(self.X)
@@ -117,6 +115,14 @@ class NeuralNetwork:
         
         return y_pred
     
+    def predict_regression(self, X):
+        """
+        
+        """
+        self.a[0] = X
+        self.feed_forward()
+        return self.a[-1]
+    
     def activation(self, x, method):
         """
         Activation functions
@@ -140,7 +146,7 @@ class NeuralNetwork:
             x[neg] = 0
             t = x
         else:
-            t = 1
+            t = x
 
         return t
             
